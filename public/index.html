@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Map</title>
+  <link rel="stylesheet" href="leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Top bar -->
+<header id="topbar">
+  <button id="btn-menu" class="icon-btn" title="Menu" aria-label="Abrir menu">&#9776;</button>
+  <span id="app-title">Map</span>
+  <div id="topbar-actions">
+    <button id="btn-gps" class="icon-btn" title="Minha localização">&#9678;</button>
+    <div id="status-badge" class="status online" title="Status de conexão">
+      <span id="status-dot"></span>
+      <span id="status-label">Online</span>
+    </div>
+  </div>
+</header>
+
+<!-- Layout -->
+<div id="layout">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="open">
+
+    <!-- Tab bar -->
+    <div id="sidebar-tabs">
+      <button class="sidebar-tab active" data-panel="panel-filters">&#128269; Tags</button>
+      <button class="sidebar-tab" data-panel="panel-list">&#128221; Lista</button>
+      <button class="sidebar-tab" data-panel="panel-config">&#9881;&#65039; Config</button>
+    </div>
+
+    <!-- Panel: Filtros -->
+    <div id="panel-filters" class="sidebar-panel">
+      <div id="sidebar-search">
+        <div class="search-wrap">
+          <input type="text" id="search-input" placeholder="Filtrar no mapa..." autocomplete="off">
+          <button class="search-clear hidden" id="search-input-clear" title="Limpar">&#215;</button>
+        </div>
+        <span id="tags-count-badge" class="list-count-badge">0</span>
+      </div>
+
+      <div id="tag-filters">
+        <div class="filter-header">
+          <span>Tags</span>
+          <button id="btn-toggle-all" class="link-btn">Desmarcar todos</button>
+        </div>
+        <!-- populated by app.js -->
+      </div>
+
+      <div id="sidebar-footer">
+        <button id="btn-add-pin" class="btn-primary">+ Adicionar pin</button>
+      </div>
+    </div>
+
+    <!-- Panel: Lista -->
+    <div id="panel-list" class="sidebar-panel hidden">
+      <div id="list-search-row">
+        <div class="search-wrap">
+          <input type="text" id="list-search" placeholder="Filtrar no mapa..." autocomplete="off">
+          <button class="search-clear hidden" id="list-search-clear" title="Limpar">&#215;</button>
+        </div>
+        <span id="list-count" class="list-count-badge">0</span>
+      </div>
+      <div id="items-list">
+        <!-- populated by app.js -->
+      </div>
+    </div>
+
+    <!-- Panel: Config -->
+    <div id="panel-config" class="sidebar-panel hidden">
+
+      <div class="config-section">
+        <div class="config-section-title">Exibição</div>
+
+        <div class="setting-row">
+          <span class="setting-label">Nomes dos pins</span>
+          <div id="label-mode-btns">
+            <button class="mode-btn active" data-mode="hover">Ocultar</button>
+            <button class="mode-btn" data-mode="all">Mostrar</button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Terreno</span>
+          <div id="boundary-mode-btns">
+            <button class="mode-btn" data-bmode="hidden">Oculto</button>
+            <button class="mode-btn" data-bmode="boundary">Perímetro</button>
+            <button class="mode-btn active" data-bmode="both">+ Reserva</button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Fonte: <span id="font-size-val">12</span>px</span>
+          <input type="range" id="font-size-range" min="8" max="16" value="12" step="1">
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Pins: <span id="pin-size-val">1.0</span>×</span>
+          <input type="range" id="pin-size-range" min="0.5" max="1.5" value="1.0" step="0.1">
+        </div>
+      </div>
+
+      <div class="config-section">
+        <div class="config-section-title">Tags</div>
+        <button id="btn-edit-tags" class="btn-secondary" style="width:100%">&#9998; Editar tags</button>
+      </div>
+
+      <div class="config-section">
+        <div class="config-section-title">Dados</div>
+        <div class="data-btns">
+          <button id="btn-export" class="btn-secondary">&#8595; Exportar</button>
+          <button id="btn-import" class="btn-secondary">&#8593; Importar</button>
+        </div>
+        <input type="file" id="import-file-input" accept=".json" style="display:none">
+      </div>
+
+    </div>
+
+  </aside>
+
+  <!-- Map -->
+  <main id="map-container">
+    <div id="map"></div>
+
+    <!-- Sync toast -->
+    <div id="sync-toast" class="hidden">
+      <span id="sync-msg"></span>
+      <button id="btn-sync-now">Sincronizar</button>
+      <button id="btn-sync-dismiss">×</button>
+    </div>
+  </main>
+
+</div>
+
+<!-- Edit modal -->
+<div id="modal-overlay" class="hidden">
+  <div id="modal">
+    <div id="modal-header">
+      <h2 id="modal-title">Editar item</h2>
+      <button id="modal-close" class="icon-btn" aria-label="Fechar">×</button>
+    </div>
+
+    <div id="modal-body">
+      <label>Nome
+        <input type="text" id="edit-name" autocomplete="off">
+      </label>
+
+      <div class="modal-field">Tags
+        <div id="edit-tags-container">
+          <div id="edit-tags-chips"></div>
+          <div id="edit-tags-input-row">
+            <div id="edit-tag-input-wrap">
+              <input type="text" id="edit-tag-input" placeholder="Nova tag..." autocomplete="off">
+              <ul id="tag-suggestions-dropdown"></ul>
+            </div>
+            <button id="btn-add-tag" class="btn-small">+</button>
+          </div>
+        </div>
+      </div>
+
+      <label>Notas
+        <textarea id="edit-notes" rows="3" placeholder="Observações..."></textarea>
+      </label>
+
+      <div id="custom-fields-section">
+        <div class="section-label">Campos personalizados</div>
+        <div id="custom-fields-list"></div>
+        <button id="btn-add-field" class="btn-small">+ Adicionar campo</button>
+      </div>
+
+      <div id="modal-coords">
+        <span id="modal-lat-lon"></span>
+        <span id="modal-ele"></span>
+      </div>
+    </div>
+
+    <div id="modal-footer">
+      <button id="btn-delete" class="btn-danger">Excluir</button>
+      <div style="flex:1"></div>
+      <button id="btn-cancel" class="btn-secondary">Cancelar</button>
+      <button id="btn-save" class="btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tags editor modal -->
+<div id="tags-modal-overlay" class="hidden">
+  <div id="tags-modal">
+    <div id="tags-modal-header">
+      <h2>Editar tags</h2>
+      <button id="tags-modal-close" class="icon-btn" aria-label="Fechar">&#215;</button>
+    </div>
+    <div id="tags-modal-body">
+      <div id="tag-editor-list"></div>
+      <button id="btn-add-tag-row" class="btn-small">+ Nova tag</button>
+    </div>
+    <div id="tags-modal-footer">
+      <div style="flex:1"></div>
+      <button id="btn-tags-cancel" class="btn-secondary">Cancelar</button>
+      <button id="btn-tags-save" class="btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom confirm dialog -->
+<div id="confirm-overlay" class="hidden">
+  <div id="confirm-dialog">
+    <p id="confirm-message"></p>
+    <div id="confirm-actions">
+      <button id="confirm-cancel" class="btn-secondary">Cancelar</button>
+      <button id="confirm-ok" class="btn-primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add-pin mode overlay hint (fixed below topbar) -->
+<div id="add-pin-hint" class="hidden">
+  Clique no mapa para posicionar o novo pin &nbsp; <button id="btn-cancel-add">Cancelar</button>
+</div>
+
+<script src="leaflet.js"></script>
+<script src="seed.js"></script>
+<script src="sync.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
