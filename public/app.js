@@ -1002,7 +1002,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `map-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `map_backup_${new Date().toISOString().replace('T', '_').replace(/[^0-9_]/g, "-").slice(0, 19)}.json`;
   a.click();
 }
 
